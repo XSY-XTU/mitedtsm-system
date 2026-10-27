@@ -1,0 +1,244 @@
+<template>
+  <doc-alert :title="t('mall.promotion.article.title')" url="https://doc.iocoder.cn/mall/promotion-content/" />
+
+  <ContentWrap>
+    <!-- 搜索工作区 -->
+    <el-form
+      ref="queryFormRef"
+      :model="queryParams"
+      class="-mb-15px"
+      label-width="auto"
+    >
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-form-item :label="t('mall.promotion.article.categoryId')" prop="categoryId">
+            <el-select
+              v-model="queryParams.categoryId"
+              class="!w-240px"
+              :placeholder="t('mall.promotion.article.categoryPlaceholder')"
+              @keyup.enter="handleQuery"
+            >
+              <el-option
+                v-for="item in categoryList"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item :label="t('mall.promotion.article.title2')" prop="title">
+            <el-input
+              v-model="queryParams.title"
+              class="!w-240px"
+              clearable
+              :placeholder="t('mall.promotion.article.titlePlaceholder')"
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item :label="t('mall.promotion.article.status')" prop="status">
+            <el-select v-model="queryParams.status" class="!w-240px" clearable :placeholder="t('mall.promotion.article.statusPlaceholder')">
+              <el-option
+                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-form-item :label="t('mall.promotion.article.createTime')" prop="createTime">
+            <el-date-picker
+              v-model="queryParams.createTime"
+              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+              class="!w-240px"
+              :end-placeholder="t('common.endTime')"
+              :start-placeholder="t('common.startTime')"
+              type="daterange"
+              value-format="YYYY-MM-DD HH:mm:ss"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="24">
+          <el-form-item>
+            <el-button @click="handleQuery">
+              <Icon class="mr-5px" icon="ep:search" />
+              {{ t('common.search') }}
+            </el-button>
+            <el-button @click="resetQuery">
+              <Icon class="mr-5px" icon="ep:refresh" />
+              {{ t('common.reset') }}
+            </el-button>
+            <el-button
+              v-hasPermi="['promotion:article:create']"
+              plain
+              type="primary"
+              @click="openForm('create')"
+            >
+              <Icon class="mr-5px" icon="ep:plus" />
+              {{ t('common.add') }}
+            </el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+  </ContentWrap>
+
+  <!-- 列表 -->
+  <ContentWrap>
+    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true" :table-layout="'auto'">
+      <el-table-column align="center" label="ID" min-width="180" prop="id" />
+      <el-table-column align="center" :label="t('mall.promotion.article.picUrl')" min-width="80" prop="picUrl">
+        <template #default="{ row }">
+          <el-image :src="row.picUrl" class="h-30px w-30px" @click="imagePreview(row.picUrl)" />
+        </template>
+      </el-table-column>
+      <el-table-column align="center" :label="t('mall.promotion.article.title2')" min-width="180" prop="title" />
+      <el-table-column align="center" :label="t('mall.promotion.article.category')" min-width="180" prop="categoryId">
+        <template #default="scope">
+          {{ categoryList.find((item) => item.id === scope.row.categoryId)?.name }}
+        </template>
+      </el-table-column>
+      <el-table-column align="center" :label="t('mall.promotion.article.browseCount')" min-width="180" prop="browseCount" />
+      <el-table-column align="center" :label="t('mall.promotion.article.author')" min-width="180" prop="author" />
+      <el-table-column align="center" :label="t('mall.promotion.article.introduction')" min-width="250" prop="introduction" />
+      <el-table-column align="center" :label="t('mall.promotion.article.sort')" min-width="60" prop="sort" />
+      <el-table-column align="center" :label="t('mall.promotion.article.status')" min-width="60" prop="status">
+        <template #default="scope">
+          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
+        </template>
+      </el-table-column>
+      <el-table-column
+        :formatter="dateFormatter"
+        align="center"
+        :label="t('mall.promotion.article.publishTime')"
+        prop="createTime"
+        min-width="180"
+      />
+      <el-table-column align="center" fixed="right" :label="t('mall.promotion.article.operation')" min-width="120">
+        <template #default="scope">
+          <el-button
+            v-hasPermi="['promotion:article:update']"
+            link
+            type="primary"
+            @click="openForm('update', scope.row.id)"
+          >
+            {{ t('action.edit') }}
+          </el-button>
+          <el-button
+            v-hasPermi="['promotion:article:delete']"
+            link
+            type="danger"
+            @click="handleDelete(scope.row.id)"
+          >
+            {{ t('action.delete') }}
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <!-- 分页 -->
+    <Pagination
+      v-model:limit="queryParams.pageSize"
+      v-model:page="queryParams.pageNo"
+      :total="total"
+      @pagination="getList"
+    />
+  </ContentWrap>
+
+  <!-- 表单弹窗：添加/修改 -->
+  <ArticleForm ref="formRef" @success="getList" />
+</template>
+
+<script lang="ts" setup>
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { dateFormatter } from '@/utils/formatTime'
+import * as ArticleApi from '@/api/mall/promotion/article'
+import ArticleForm from './ArticleForm.vue'
+import * as ArticleCategoryApi from '@/api/mall/promotion/articleCategory'
+import * as ProductSpuApi from '@/api/mall/product/spu'
+import { createImageViewer } from '@/components/ImageViewer'
+
+defineOptions({ name: 'PromotionArticle' })
+
+const message = useMessage() // 消息弹窗
+const { t } = useI18n() // 国际化
+const loading = ref(true) // 列表的加载中
+const total = ref(0) // 列表的总页数
+const list = ref([]) // 列表的数据
+const queryParams = reactive({
+  pageNo: 1,
+  pageSize: 10,
+  categoryId: undefined,
+  title: null,
+  status: undefined,
+  spuId: undefined,
+  createTime: []
+})
+const queryFormRef = ref() // 搜索的表单
+/** 文章封面预览 */
+const imagePreview = (imgUrl: string) => {
+  createImageViewer({
+    urlList: [imgUrl]
+  })
+}
+/** 查询列表 */
+const getList = async () => {
+  loading.value = true
+  try {
+    const data = await ArticleApi.getArticlePage(queryParams)
+    list.value = data.list
+    total.value = data.total
+  } finally {
+    loading.value = false
+  }
+}
+
+/** 搜索按钮操作 */
+const handleQuery = () => {
+  queryParams.pageNo = 1
+  getList()
+}
+
+/** 重置按钮操作 */
+const resetQuery = () => {
+  queryFormRef.value.resetFields()
+  handleQuery()
+}
+
+/** 添加/修改操作 */
+const formRef = ref()
+const openForm = (type: string, id?: number) => {
+  formRef.value.open(type, id)
+}
+
+/** 删除按钮操作 */
+const handleDelete = async (id: number) => {
+  try {
+    // 删除的二次确认
+    await message.delConfirm()
+    // 发起删除
+    await ArticleApi.deleteArticle(id)
+    message.success(t('common.delSuccess'))
+    // 刷新列表
+    await getList()
+  } catch {}
+}
+
+const categoryList = ref<ArticleCategoryApi.ArticleCategoryVO[]>([])
+const spuList = ref<ProductSpuApi.Spu[]>([])
+onMounted(async () => {
+  await getList()
+  // 加载分类、商品列表
+    categoryList.value =
+    (await ArticleCategoryApi.getSimpleArticleCategoryList()) as ArticleCategoryApi.ArticleCategoryVO[]
+  spuList.value = (await ProductSpuApi.getSpuSimpleList()) as ProductSpuApi.Spu[]
+})
+</script>

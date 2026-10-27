@@ -1,0 +1,49 @@
+<template>
+  <el-table :data="contacts" :show-overflow-tooltip="true" :stripe="true" height="150" :table-layout="'auto'">
+    <el-table-column :label="t('contact.name')" fixed="left" align="center" prop="name">
+      <template #default="scope">
+        <el-link type="primary" :underline="false" @click="openDetail(scope.row.id)">
+          {{ scope.row.name }}
+        </el-link>
+      </template>
+    </el-table-column>
+    <el-table-column :label="t('contact.mobile')" align="center" prop="mobile" />
+    <el-table-column :label="t('contact.post')" align="center" prop="post" />
+    <el-table-column :label="t('contact.parentName')" align="center" prop="parentName" />
+    <el-table-column :label="t('contact.master')" align="center" prop="master" min-width="100">
+      <template #default="scope">
+        <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
+      </template>
+    </el-table-column>
+    <el-table-column align="center" fixed="right" :label="t('common.action')" min-width="150">
+      <template #default="scope">
+        <el-button link type="danger" @click="handleDelete(scope.row.id)"> {{ t('common.remove') }}</el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+</template>
+
+<script lang="ts" setup>
+import { DICT_TYPE } from '@/utils/dict'
+
+const { t } = useI18n('crm') // 国际化
+
+const props = defineProps<{
+  contacts: undefined
+}>()
+const formData = ref([])
+
+/** 初始化联系人列表 */
+watch(
+  () => props.contacts,
+  async (val) => {
+    formData.value = val
+  },
+  { immediate: true }
+)
+
+/** 删除按钮操作 */
+const handleDelete = (index: number) => {
+  formData.value.splice(index, 1)
+}
+</script>

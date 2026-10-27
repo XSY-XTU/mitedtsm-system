@@ -1,0 +1,28 @@
+export default {
+  welcome: 'Hello',
+  happyDay: 'Wish you happy every day!',
+  toady: "It's sunny today",
+  notice: 'Announcement',
+  access: 'Project access',
+  toDo: 'To do',
+  introduction: 'A serious introduction',
+  shortcutOperation: 'Quick entry',
+  operation: 'Operation',
+  index: 'Index',
+  personal: 'Personal',
+  team: 'Team',
+  quote: 'Quote',
+  contribution: 'Contribution',
+  hot: 'Hot',
+  yield: 'Yield',
+  dynamic: 'Dynamic',
+  push: 'push',
+  follow: 'Follow',
+  // Quick entry shortcuts
+  shortcutHome: 'Home',
+  shortcutMall: 'Mall Center',
+  shortcutAi: 'AI Model',
+  shortcutErp: 'ERP System',
+  shortcutCrm: 'CRM System',
+  shortcutIot: 'IoT Platform'
+}

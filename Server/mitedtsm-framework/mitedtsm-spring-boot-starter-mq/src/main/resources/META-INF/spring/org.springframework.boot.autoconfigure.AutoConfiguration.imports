@@ -1,0 +1,3 @@
+com.meession.etm.framework.mq.redis.config.MitedtsmRedisMQProducerAutoConfiguration
+com.meession.etm.framework.mq.redis.config.MitedtsmRedisMQConsumerAutoConfiguration
+com.meession.etm.framework.mq.rabbitmq.config.MitedtsmRabbitMQAutoConfiguration

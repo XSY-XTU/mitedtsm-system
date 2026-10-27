@@ -1,0 +1,28 @@
+export default {
+  welcome: '你好',
+  happyDay: '祝你开心每一天!',
+  toady: '今日晴',
+  notice: '通知公告',
+  access: '项目访问',
+  toDo: '待办',
+  introduction: '一个正经的简介',
+  shortcutOperation: '快捷入口',
+  operation: '操作',
+  index: '指数',
+  personal: '个人',
+  team: '团队',
+  quote: '引用',
+  contribution: '贡献',
+  hot: '热度',
+  yield: '产量',
+  dynamic: '动态',
+  push: '推送',
+  follow: '关注',
+  // 快捷入口
+  shortcutHome: '首页',
+  shortcutMall: '商城中心',
+  shortcutAi: 'AI 大模型',
+  shortcutErp: 'ERP 系统',
+  shortcutCrm: 'CRM 系统',
+  shortcutIot: 'IoT 物联网'
+}

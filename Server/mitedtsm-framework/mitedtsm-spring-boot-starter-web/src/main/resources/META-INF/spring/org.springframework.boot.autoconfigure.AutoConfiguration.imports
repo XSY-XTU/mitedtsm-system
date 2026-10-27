@@ -1,0 +1,7 @@
+com.meession.etm.framework.apilog.config.MitedtsmApiLogAutoConfiguration
+com.meession.etm.framework.jackson.config.MitedtsmJacksonAutoConfiguration
+com.meession.etm.framework.swagger.config.MitedtsmSwaggerAutoConfiguration
+com.meession.etm.framework.web.config.MitedtsmWebAutoConfiguration
+com.meession.etm.framework.xss.config.MitedtsmXssAutoConfiguration
+com.meession.etm.framework.banner.config.MitedtsmBannerAutoConfiguration
+com.meession.etm.framework.encrypt.config.MitedtsmApiEncryptAutoConfiguration

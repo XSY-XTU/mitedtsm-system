@@ -1,0 +1,4 @@
+com.meession.etm.framework.idempotent.config.MitedtsmIdempotentConfiguration
+com.meession.etm.framework.lock4j.config.MitedtsmLock4jConfiguration
+com.meession.etm.framework.ratelimiter.config.MitedtsmRateLimiterConfiguration
+com.meession.etm.framework.signature.config.MitedtsmApiSignatureAutoConfiguration

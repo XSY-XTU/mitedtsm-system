@@ -1,0 +1,20 @@
+## InitService Dockerfile
+## 用于构建初始化服务镜像
+FROM eclipse-temurin:17-jdk
+
+## 创建工作目录
+RUN mkdir -p /init-service
+WORKDIR /init-service
+
+## 将打包好的jar文件复制到镜像中
+COPY target/mitedtsm-init-service.jar app.jar
+
+## 设置TZ时区
+ENV TZ=Asia/Shanghai
+
+## TDengine连接配置（可通过环境变量覆盖）
+ENV TDENGINE_HOST=tdengine
+ENV TDENGINE_PORT=6041
+
+## 运行初始化服务
+CMD ["java", "-jar", "app.jar"]

@@ -1,0 +1,43 @@
+# 统一换行符，避免 Windows / Linux 协作时产生无意义的整文件 diff
+* text=auto
+
+# 脚本
+*.sh          text eol=lf
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+*.ps1         text eol=crlf
+
+# 配置与源码
+*.java        text eol=lf
+*.xml         text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.properties  text eol=lf
+*.sql         text eol=lf
+*.ts          text eol=lf
+*.vue         text eol=lf
+*.js          text eol=lf
+*.json        text eol=lf
+*.md          text eol=lf
+
+# 二进制（不做行尾转换，不做文本 diff）
+*.jar         binary
+*.war         binary
+*.tar         binary
+*.tar.gz      binary
+*.zip         binary
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.webp        binary
+*.mp3         binary
+*.mp4         binary
+*.ttf         binary
+*.woff        binary
+*.woff2       binary
+*.xdb         binary
+
+# 语言统计
+*.sql         linguist-language=SQL

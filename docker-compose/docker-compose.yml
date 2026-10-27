@@ -1,0 +1,201 @@
+name: mitedtsm-system
+
+services:
+  # ===========================================
+  # MySQL 8 数据库
+  # ===========================================
+  mysql:
+    container_name: mitedtsm-mysql
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mitedtsm_database}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-1234}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database:/docker-init-sql:ro
+      - ./init/init-mysql.sh:/docker-entrypoint-initdb.d/init-mysql.sh:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # Redis 6 缓存
+  # ===========================================
+  redis:
+    container_name: mitedtsm-redis
+    image: redis:6-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # RabbitMQ 消息队列
+  # ===========================================
+  rabbitmq:
+    container_name: mitedtsm-rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # TDengine 3.3.6.0 时序数据库
+  # ===========================================
+  tdengine:
+    container_name: mitedtsm-tdengine
+    image: tdengine/tdengine:3.3.6.0
+    restart: unless-stopped
+    ports:
+      - "6030:6030"
+      - "6041:6041"
+      - "6043-6049:6043-6049"
+      - "6043-6049:6043-6049/udp"
+    volumes:
+      - tdengine_data:/var/lib/taos
+    environment:
+      TAOS_FQDN: tdengine
+    healthcheck:
+      test: ["CMD", "taos", "-s", "SHOW DATABASES;"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # InitService 初始化服务
+  # ===========================================
+  init-service:
+    container_name: mitedtsm-init-service
+    build:
+      context: ../InitService
+      dockerfile: ../docker-compose/Dockerfile.init
+    image: mitedtsm-init-service:latest
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      tdengine:
+        condition: service_healthy
+    environment:
+      TDENGINE_HOST: tdengine
+      TDENGINE_PORT: 6041
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # Server 后端服务 (Java Spring Boot)
+  # ===========================================
+  server:
+    container_name: mitedtsm-server
+    build:
+      context: ../Server/mitedtsm-server
+      dockerfile: ../../docker-compose/Dockerfile.server
+    image: mitedtsm-server:latest
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      init-service:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # Web 管理后台前端 (Vue3)
+  # ===========================================
+  web:
+    container_name: mitedtsm-web
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    volumes:
+      - ../Web/dist-prod:/usr/share/nginx/html:ro
+      - ./nginx/web.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - mitedtsm-network
+
+  # ===========================================
+  # Mall 商城前端 (uni-app H5)
+  # ===========================================
+  mall:
+    container_name: mitedtsm-mall
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "${MALL_PORT:-81}:80"
+    volumes:
+      - ../MallFrontend/unpackage/dist/build/web:/usr/share/nginx/html:ro
+      - ./nginx/mall.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - mitedtsm-network
+
+# ===========================================
+# 网络配置
+# ===========================================
+networks:
+  mitedtsm-network:
+    driver: bridge
+
+# ===========================================
+# 数据卷配置
+# ===========================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  tdengine_data:
+    driver: local

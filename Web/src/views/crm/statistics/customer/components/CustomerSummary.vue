@@ -1,0 +1,183 @@
+<!-- 客户总量统计 -->
+<template>
+  <!-- Echarts-->
+  <el-card shadow="never">
+    <el-skeleton :loading="loading" animated>
+      <Echart :height="500" :options="echartsOption" />
+    </el-skeleton>
+  </el-card>
+
+  <!-- 统计列表 -->
+  <el-card shadow="never" class="mt-16px">
+    <el-table v-loading="loading" :data="list" :table-layout="'auto'">
+      <el-table-column :label="t('customer.index')" align="center" type="index" width="80" fixed="left" />
+      <el-table-column :label="t('customer.ownerUserName')" prop="ownerUserName" min-width="100" fixed="left" />
+      <el-table-column
+        :label="t('customer.customerCreateCount')"
+        align="right"
+        prop="customerCreateCount"
+        min-width="200"
+      />
+      <el-table-column :label="t('customer.customerDealCount')" align="right" prop="customerDealCount" min-width="200" />
+      <el-table-column :label="t('customer.customerDealRate')" align="right" min-width="200">
+        <template #default="scope">
+          {{ erpCalculatePercentage(scope.row.customerDealCount, scope.row.customerCreateCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="t('customer.contractPrice')"
+        align="right"
+        prop="contractPrice"
+        min-width="200"
+        :formatter="erpPriceTableColumnFormatter"
+      />
+      <el-table-column
+        :label="t('customer.receivablePrice')"
+        align="right"
+        prop="receivablePrice"
+        min-width="200"
+        :formatter="erpPriceTableColumnFormatter"
+      />
+      <el-table-column :label="t('customer.unreceivablePrice')" align="right" min-width="200">
+        <template #default="scope">
+          {{ erpCalculatePercentage(scope.row.receivablePrice, scope.row.contractPrice) }}
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('customer.receivableRate')" align="right" min-width="200" fixed="right">
+        <template #default="scope">
+          {{ erpCalculatePercentage(scope.row.receivablePrice, scope.row.contractPrice) }}
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-card>
+</template>
+<script setup lang="ts">
+import {
+  StatisticsCustomerApi,
+  CrmStatisticsCustomerSummaryByDateRespVO,
+  CrmStatisticsCustomerSummaryByUserRespVO
+} from '@/api/crm/statistics/customer'
+import { EChartsOption } from 'echarts'
+import { erpCalculatePercentage, erpPriceTableColumnFormatter } from '@/utils'
+
+defineOptions({ name: 'CustomerSummary' })
+
+const { t } = useI18n('crm.statistics') // 国际
+const props = defineProps<{ queryParams: any }>() // 搜索参数
+
+const loading = ref(false) // 加载
+const list = ref<CrmStatisticsCustomerSummaryByUserRespVO[]>([]) // 列表的数
+/** 柱状图配置：纵向 */
+const echartsOption = reactive<EChartsOption>({
+  grid: {
+    left: 20,
+    right: 30, // X 轴右侧显示完
+    bottom: 20,
+    containLabel: true
+  },
+  legend: {},
+  series: [
+    {
+      name: t('customer.newCustomerCount'),
+      type: 'bar',
+      yAxisIndex: 0,
+      data: []
+    },
+    {
+      name: t('customer.dealCustomerCount'),
+      type: 'bar',
+      yAxisIndex: 1,
+      data: []
+    }
+  ],
+  toolbox: {
+    feature: {
+      dataZoom: {
+        xAxisIndex: false // 数据区域缩放：Y 轴不缩放
+      },
+      brush: {
+        type: ['lineX', 'clear'] // 区域缩放按钮、还原按
+        },
+      saveAsImage: { show: true, name: t('customer.summary') } // 保存为图
+      }
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    }
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: t('customer.newCustomerCount'),
+      min: 0,
+      minInterval: 1 // 显示整数刻度
+    },
+    {
+      type: 'value',
+      name: t('customer.dealCustomerCount'),
+      min: 0,
+      minInterval: 1, // 显示整数刻度
+      splitLine: {
+        lineStyle: {
+          type: 'dotted', // 右侧网格线虚 减少混乱
+          opacity: 0.7
+        }
+      }
+    }
+  ],
+  xAxis: {
+    type: 'category',
+    name: t('customer.date'),
+    data: []
+  }
+}) as EChartsOption
+
+/** 获取数据并填充图*/
+const fetchAndFill = async () => {
+  // 1. 加载统计数据
+  const customerSummaryByDate = await StatisticsCustomerApi.getCustomerSummaryByDate(
+    props.queryParams
+  )
+  const customerSummaryByUser = await StatisticsCustomerApi.getCustomerSummaryByUser(
+    props.queryParams
+  )
+  // 2.1 更新 Echarts 数据
+  if (echartsOption.xAxis && echartsOption.xAxis['data']) {
+    echartsOption.xAxis['data'] = customerSummaryByDate.map(
+      (s: CrmStatisticsCustomerSummaryByDateRespVO) => s.time
+    )
+  }
+  if (echartsOption.series && echartsOption.series[0] && echartsOption.series[0]['data']) {
+    echartsOption.series[0]['data'] = customerSummaryByDate.map(
+      (s: CrmStatisticsCustomerSummaryByDateRespVO) => s.customerCreateCount
+    )
+  }
+  if (echartsOption.series && echartsOption.series[1] && echartsOption.series[1]['data']) {
+    echartsOption.series[1]['data'] = customerSummaryByDate.map(
+      (s: CrmStatisticsCustomerSummaryByDateRespVO) => s.customerDealCount
+    )
+  }
+
+  // 2.2 更新列表数据
+  list.value = customerSummaryByUser
+}
+
+/** 获取统计数据 */
+const loadData = async () => {
+  loading.value = true
+  try {
+    await fetchAndFill()
+  } finally {
+    loading.value = false
+  }
+}
+
+defineExpose({ loadData })
+
+/** 初始*/
+onMounted(() => {
+  loadData()
+})
+</script>

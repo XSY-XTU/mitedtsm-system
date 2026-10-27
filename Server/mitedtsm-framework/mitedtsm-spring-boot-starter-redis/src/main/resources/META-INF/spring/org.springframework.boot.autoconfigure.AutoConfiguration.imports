@@ -1,0 +1,2 @@
+com.meession.etm.framework.redis.config.MitedtsmRedisAutoConfiguration
+com.meession.etm.framework.redis.config.MitedtsmCacheAutoConfiguration

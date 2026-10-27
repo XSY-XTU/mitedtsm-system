@@ -1,0 +1,28 @@
+export default {
+  welcome: 'مرحباً',
+  happyDay: 'أتمنى لك يوماً سعيداً!',
+  toady: 'اليوم مشمس',
+  notice: 'إعلان',
+  access: 'وصول المشروع',
+  toDo: 'المهام',
+  introduction: 'مقدمة جادة',
+  shortcutOperation: 'دخول سريع',
+  operation: 'العملية',
+  index: 'الفهرس',
+  personal: 'شخصي',
+  team: 'فريق',
+  quote: 'اقتباس',
+  contribution: 'مساهمة',
+  hot: '热门',
+  yield: 'العائد',
+  dynamic: 'ديناميكي',
+  push: 'دفع',
+  follow: 'متابعة',
+  // Quick entry shortcuts
+  shortcutHome: 'الرئيسية',
+  shortcutMall: 'مركز التجارة',
+  shortcutAi: 'نموذج الذكاء الاصطناعي',
+  shortcutErp: 'نظام تخطيط موارد المؤسسات',
+  shortcutCrm: 'نظام إدارة علاقات العملاء',
+  shortcutIot: 'منصة إنترنت الأشياء'
+}

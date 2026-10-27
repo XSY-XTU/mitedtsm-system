@@ -1,0 +1,141 @@
+name: mitedtsm-dev
+
+services:
+  # ===========================================
+  # MySQL 8 数据库
+  # ===========================================
+  mysql:
+    container_name: mitedtsm-dev-mysql
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mitedtsm_database}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-1234}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database:/docker-init-sql:ro
+      - ../docker-compose/init/init-mysql.sh:/docker-entrypoint-initdb.d/init-mysql.sh:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-dev-network
+
+  # ===========================================
+  # Redis 6 缓存
+  # ===========================================
+  redis:
+    container_name: mitedtsm-dev-redis
+    image: redis:6-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-dev-network
+
+  # ===========================================
+  # RabbitMQ 消息队列
+  # ===========================================
+  rabbitmq:
+    container_name: mitedtsm-dev-rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mitedtsm-dev-network
+
+  # ===========================================
+  # TDengine 3.3.6.0 时序数据库
+  # ===========================================
+  tdengine:
+    container_name: mitedtsm-dev-tdengine
+    image: tdengine/tdengine:3.3.6.0
+    restart: unless-stopped
+    ports:
+      - "6030:6030"
+      - "6041:6041"
+      - "6043-6049:6043-6049"
+      - "6043-6049:6043-6049/udp"
+    volumes:
+      - tdengine_data:/var/lib/taos
+    environment:
+      TAOS_FQDN: tdengine
+    healthcheck:
+      test: ["CMD", "taos", "-s", "SHOW DATABASES;"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mitedtsm-dev-network
+
+  # ===========================================
+  # InitService 初始化服务
+  # ===========================================
+  init-service:
+    container_name: mitedtsm-dev-init-service
+    build:
+      context: ../InitService
+      dockerfile: ../docker-compose/Dockerfile.init
+    image: mitedtsm-init-service:latest
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      tdengine:
+        condition: service_healthy
+    environment:
+      TDENGINE_HOST: tdengine
+      TDENGINE_PORT: 6041
+    networks:
+      - mitedtsm-dev-network
+
+# ===========================================
+# 网络配置
+# ===========================================
+networks:
+  mitedtsm-dev-network:
+    driver: bridge
+
+# ===========================================
+# 数据卷配置
+# ===========================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  tdengine_data:
+    driver: local
