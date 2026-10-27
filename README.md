@@ -1,6 +1,6 @@
 <div align="center">
 
-# MITEDTSM · 密讯企业级综合管理平台
+# MITEDTSM · 企业级综合管理平台
 
 **基于 RuoYi-Vue-Pro 深度定制的企业级多模块管理平台**
 
