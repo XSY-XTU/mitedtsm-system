@@ -204,6 +204,6 @@ docker compose up -d --build
 
 ## 📄 开源协议
 
-本项目基于 [MIT](./LICENSE) 协议开源。
+本项目基于 [MIT](./LICENSE) 协议开源。(仅可用于学习)
 
 本项目以 MIT 协议的 [RuoYi-Vue-Pro](https://github.com/YunaiV/ruoyi-vue-pro) 为基础深度定制开发，原始版权声明予以保留。
